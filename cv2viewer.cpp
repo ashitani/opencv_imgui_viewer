@@ -23,7 +23,7 @@ class ImageTexture {
 
  public:
   ~ImageTexture();
-  void setImage(cv::Mat frame);    // from cv::Mat (BGR)
+  void setImage(cv::Mat *frame);    // from cv::Mat (BGR)
   void setImage(string filename);  // from file
   void* getOpenglTexture();
   ImVec2 getSize();
@@ -34,10 +34,11 @@ ImageTexture::~ImageTexture() {
   glDeleteTextures(1, &my_opengl_texture);
 }
 
-void ImageTexture::setImage(cv::Mat frame) {
-  width = frame.cols;
-  height = frame.rows;
-  cv::cvtColor(frame, frame, cv::COLOR_BGR2RGBA);
+void ImageTexture::setImage(cv::Mat *pframe) {
+  cv::Mat frame;
+  width = pframe->cols;
+  height = pframe->rows;
+  cv::cvtColor(*pframe, frame, cv::COLOR_BGR2RGBA);
 
   glGenTextures(1, &my_opengl_texture);
   glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
@@ -54,7 +55,7 @@ void ImageTexture::setImage(cv::Mat frame) {
 
 void ImageTexture::setImage(string filename) {
   cv::Mat frame = cv::imread(filename);
-  setImage(frame);
+  setImage(&frame);
 }
 
 void* ImageTexture::getOpenglTexture() {
@@ -76,7 +77,7 @@ class ImageViewer {
 
   // dynamic contents
   vector<string> frame_names;
-  vector<cv::Mat> frames;
+  vector<cv::Mat*> frames;
   float gain;
 
   void init();
@@ -87,8 +88,8 @@ class ImageViewer {
  public:
   ImageViewer();
   bool handleEvent();
-  void imshow(string, cv::Mat);
-  void imshow(cv::Mat);
+  void imshow(string, cv::Mat*);
+  void imshow(cv::Mat*);
   void show();
   void exit();
   float getGain();
@@ -182,12 +183,12 @@ void ImageViewer::initContents() {
   clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 }
 
-void ImageViewer::imshow(string frame_name, cv::Mat frame) {
+void ImageViewer::imshow(string frame_name, cv::Mat *frame) {
   frame_names.push_back(frame_name);
   frames.push_back(frame);
 }
 
-void ImageViewer::imshow(cv::Mat frame) {
+void ImageViewer::imshow(cv::Mat *frame) {
   imshow("image:" + to_string(frames.size()), frame);
 }
 
@@ -217,7 +218,7 @@ void ImageViewer::show() {
 
   // imshow windows
   for (int i = 0; i < frames.size(); i++) {
-    cv::Mat frame = frames[i];
+    cv::Mat *frame = frames[i];
 
     string window_name;
     if (frame_names.size() <= i) {
@@ -280,15 +281,14 @@ int main(int, char**) {
 
       // gain
       float g = gui.getGain();
-      frame = frame * g;
       frame.convertTo(frame, CV_8U, g,0);
 
       // show halfsize image
-      gui.imshow("half", frame);
+      gui.imshow("half", &frame);
 
       // make quartersize image and show
       cv::resize(frame, frame2, cv::Size(0, 0), 0.5, 0.5, cv::INTER_LINEAR);
-      gui.imshow("quater", frame2);
+      gui.imshow("quater", &frame2);
 
       gui.show();
     }
