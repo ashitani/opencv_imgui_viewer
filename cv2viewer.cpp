@@ -35,10 +35,8 @@ ImageTexture::~ImageTexture() {
 }
 
 void ImageTexture::setImage(cv::Mat *pframe) {
-  cv::Mat frame;
   width = pframe->cols;
   height = pframe->rows;
-  cv::cvtColor(*pframe, frame, cv::COLOR_BGR2RGBA);
 
   glGenTextures(1, &my_opengl_texture);
   glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
@@ -46,11 +44,9 @@ void ImageTexture::setImage(cv::Mat *pframe) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
-  GLuint* texture_data;
-  texture_data = (GLuint*)frame.data;
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-               GL_UNSIGNED_BYTE, texture_data);
-//  cout << my_opengl_texture <<endl; // for debug
+  // Some enviromnent doesn't support GP_BGR
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR,
+               GL_UNSIGNED_BYTE, (pframe->data));
 }
 
 void ImageTexture::setImage(string filename) {
